@@ -34,7 +34,7 @@ public class ConnectionController {
     }
 
     /**
-     * Accept a connection request
+     * Accept a connection request from connections
      * PUT /api/network/connections/{connectionId}/accept
      */
     @PutMapping("/connections/{connectionId}/accept")

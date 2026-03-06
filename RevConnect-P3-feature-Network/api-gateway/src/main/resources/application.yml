@@ -2,11 +2,10 @@ server:
   port: 8080
 
 spring:
-  application:
-    name: api-gateway
   config:
     import: optional:configserver:http://localhost:8888
-
+  application:
+    name: api-gateway
   cloud:
     gateway:
       discovery:
@@ -14,10 +13,44 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=0
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+        - id: post-service
+          uri: lb://post-service
+          predicates:
+            - Path=/api/posts/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
         - id: network-service
           uri: lb://network-service
           predicates:
             - Path=/api/network/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+        - id: interaction-service
+          uri: lb://interaction-service
+          predicates:
+            - Path=/api/interactions/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
           filters:
             - StripPrefix=0
             - AuthenticationFilter
@@ -44,5 +77,5 @@ resilience4j:
       default:
         sliding-window-size: 10
         failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
+        wait-duration-in-open-state: 10000
         permitted-number-of-calls-in-half-open-state: 3

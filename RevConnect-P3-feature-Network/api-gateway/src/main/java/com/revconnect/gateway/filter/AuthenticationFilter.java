@@ -56,11 +56,11 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
     private Claims validateToken(String token) {
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
+        return Jwts.parser()
+                .verifyWith(key)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private Mono<Void> onError(ServerWebExchange exchange, String message, HttpStatus status) {
