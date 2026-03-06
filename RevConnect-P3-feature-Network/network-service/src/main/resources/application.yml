@@ -1,0 +1,24 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: network-service
+  cloud:
+    config:
+      import-check-enabled: false  # disables config server requirement
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+logging:
+  level:
+    com.revconnect.network: DEBUG
+    org.springframework.web: INFO
