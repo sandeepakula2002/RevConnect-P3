@@ -4,8 +4,6 @@ import com.revconnect.interaction.dto.CommentRequest;
 import com.revconnect.interaction.dto.CommentResponse;
 import com.revconnect.interaction.service.CommentService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

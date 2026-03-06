@@ -1,19 +1,23 @@
 spring:
   application:
     name: interaction-service
+
   datasource:
     url: jdbc:h2:mem:interactiondb
     driver-class-name: org.h2.Driver
     username: sa
-    password:
+    password: ""
+
   h2:
     console:
       enabled: true
       path: /h2-console
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    database-platform: org.hibernate.dialect.H2Dialect
     properties:
       hibernate:
         format_sql: true
@@ -27,9 +31,10 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+
   instance:
     prefer-ip-address: true
-    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    instance-id: ${spring.application.name}:${random.value}
 
 management:
   endpoints:
@@ -43,36 +48,42 @@ management:
 resilience4j:
   circuitbreaker:
     instances:
+
       userService:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 5s
-        failureRateThreshold: 50
-        eventConsumerBufferSize: 10
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 5s
+        failure-rate-threshold: 50
+
       notificationService:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 5s
-        failureRateThreshold: 50
-        eventConsumerBufferSize: 10
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 5s
+        failure-rate-threshold: 50
+
   retry:
     instances:
+
       userService:
-        maxAttempts: 3
-        waitDuration: 1s
+        max-attempts: 3
+        wait-duration: 1s
+
       notificationService:
-        maxAttempts: 3
-        waitDuration: 1s
+        max-attempts: 3
+        wait-duration: 1s
 
 feign:
+  circuitbreaker:
+    enabled: true
+
   client:
     config:
       default:
-        connectTimeout: 5000
-        readTimeout: 5000
+        connect-timeout: 5000
+        read-timeout: 5000
