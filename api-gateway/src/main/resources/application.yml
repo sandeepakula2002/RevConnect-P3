@@ -1,0 +1,79 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=0
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+        - id: post-service
+          uri: lb://post-service
+          predicates:
+            - Path=/api/posts/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+        - id: network-service
+          uri: lb://network-service
+          predicates:
+            - Path=/api/network/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+        - id: interaction-service
+          uri: lb://interaction-service
+          predicates:
+            - Path=/api/interactions/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=0
+            - AuthenticationFilter
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+
+jwt:
+  secret: revconnect-microservices-secret-key-for-jwt-token-generation-minimum-256-bits
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10000
+        permitted-number-of-calls-in-half-open-state: 3
