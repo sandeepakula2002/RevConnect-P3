@@ -1,15 +1,17 @@
-server:
-  port: 8080
-
 spring:
   application:
     name: api-gateway
+
   cloud:
+    config:
+      enabled: false
+
     gateway:
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
+
       routes:
         - id: auth-service
           uri: lb://auth-service
@@ -17,6 +19,7 @@ spring:
             - Path=/api/auth/**
           filters:
             - StripPrefix=0
+
         - id: user-service
           uri: lb://user-service
           predicates:
@@ -24,6 +27,7 @@ spring:
           filters:
             - StripPrefix=0
             - AuthenticationFilter
+
         - id: post-service
           uri: lb://post-service
           predicates:
@@ -31,6 +35,7 @@ spring:
           filters:
             - StripPrefix=0
             - AuthenticationFilter
+
         - id: network-service
           uri: lb://network-service
           predicates:
@@ -38,6 +43,7 @@ spring:
           filters:
             - StripPrefix=0
             - AuthenticationFilter
+
         - id: interaction-service
           uri: lb://interaction-service
           predicates:
@@ -45,6 +51,7 @@ spring:
           filters:
             - StripPrefix=0
             - AuthenticationFilter
+
         - id: notification-service
           uri: lb://notification-service
           predicates:
@@ -52,6 +59,9 @@ spring:
           filters:
             - StripPrefix=0
             - AuthenticationFilter
+
+server:
+  port: 8080
 
 eureka:
   client:
