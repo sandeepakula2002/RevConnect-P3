@@ -1,0 +1,338 @@
+version: '3.8'
+
+# ─────────────────────────────────────────────
+# RevConnect — Docker Compose
+# Start order: config → discovery → gateway → services → frontend
+# ─────────────────────────────────────────────
+
+services:
+
+  # ── Config Server ─────────────────────────
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    container_name: revconnect-config-server
+    image: revconnect/config-server:latest
+    ports:
+      - "8888:8888"
+    networks:
+      - revconnect-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Discovery / Eureka ────────────────────
+  discovery-server:
+    build:
+      context: ./discovery-server
+      dockerfile: Dockerfile
+    container_name: revconnect-discovery-server
+    image: revconnect/discovery-server:latest
+    ports:
+      - "8761:8761"
+    networks:
+      - revconnect-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - EUREKA_CLIENT_REGISTERWITHEUREKA=false
+      - EUREKA_CLIENT_FETCHREGISTRY=false
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── API Gateway ───────────────────────────
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: revconnect-api-gateway
+    image: revconnect/api-gateway:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - api-gateway-logs:/app/logs
+    networks:
+      - revconnect-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JWT_SECRET=revconnect-microservices-secret-key-for-jwt-token-generation-minimum-256-bits
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Auth Service ──────────────────────────
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: revconnect-auth-service
+    image: revconnect/auth-service:latest
+    ports:
+      - "8081:8081"
+    volumes:
+      - auth-service-logs:/app/logs
+    networks:
+      - revconnect-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JWT_SECRET=revconnect-microservices-secret-key-for-jwt-token-generation-minimum-256-bits
+      - USER_SERVICE_URL=http://user-service:8082
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── User Service ──────────────────────────
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: revconnect-user-service
+    image: revconnect/user-service:latest
+    ports:
+      - "8082:8082"
+    volumes:
+      - user-service-logs:/app/logs
+    networks:
+      - revconnect-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Post Service ──────────────────────────
+  post-service:
+    build:
+      context: ./post-service
+      dockerfile: Dockerfile
+    container_name: revconnect-post-service
+    image: revconnect/post-service:latest
+    ports:
+      - "8083:8083"
+    volumes:
+      - post-service-logs:/app/logs
+    networks:
+      - revconnect-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Network Service ───────────────────────
+  network-service:
+    build:
+      context: ./network-service
+      dockerfile: Dockerfile
+    container_name: revconnect-network-service
+    image: revconnect/network-service:latest
+    ports:
+      - "8084:8084"
+    volumes:
+      - network-service-logs:/app/logs
+    networks:
+      - revconnect-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Interaction Service ───────────────────
+  interaction-service:
+    build:
+      context: ./interaction-service
+      dockerfile: Dockerfile
+    container_name: revconnect-interaction-service
+    image: revconnect/interaction-service:latest
+    ports:
+      - "8085:8085"
+    volumes:
+      - interaction-service-logs:/app/logs
+    networks:
+      - revconnect-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Notification Service ──────────────────
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: revconnect-notification-service
+    image: revconnect/notification-service:latest
+    ports:
+      - "8086:8086"
+    volumes:
+      - notification-service-logs:/app/logs
+    networks:
+      - revconnect-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - JAVA_OPTS=-Xms128m -Xmx256m
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Frontend ──────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: revconnect-frontend
+    image: revconnect/frontend:latest
+    ports:
+      - "4200:80"
+    networks:
+      - revconnect-network
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  auth-service-logs:
+  user-service-logs:
+  post-service-logs:
+  network-service-logs:
+  interaction-service-logs:
+  notification-service-logs:
+  api-gateway-logs:
+
+
+networks:
+  revconnect-network:
+    driver: bridge
+    name: revconnect-network

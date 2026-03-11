@@ -1,0 +1,226 @@
+<div class="container py-4" style="background:#f3f2ef;min-height:100vh;">
+  <div class="row">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="col-md-3 d-none d-md-block">
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body text-center">
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-2"
+               style="width:60px;height:60px;font-size:24px;">👤</div>
+          <a [routerLink]="['/profile', currentUserId]" class="fw-bold text-decoration-none d-block mb-1">
+            My Profile
+          </a>
+          <small class="text-muted">View your page</small>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3">Quick Links</h6>
+          <nav class="nav flex-column gap-2">
+            <a routerLink="/feed" class="nav-link px-0 py-1">🏠 Home Feed</a>
+            <a routerLink="/network" class="nav-link px-0 py-1">👥 My Network</a>
+            <a routerLink="/notifications" class="nav-link px-0 py-1">🔔 Notifications</a>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN FEED -->
+    <div class="col-md-6">
+
+      <!-- SEARCH -->
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+          <input type="text" class="form-control"
+                 placeholder="🔍 Search people..."
+                 (input)="onSearchInput($any($event.target).value)">
+        </div>
+      </div>
+
+      <!-- SEARCH RESULTS -->
+      <div class="card mb-3 shadow-sm" *ngIf="users?.length">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">People</h6>
+          <div *ngFor="let user of users" class="d-flex align-items-center mb-3">
+            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3"
+                 style="width:40px;height:40px;">👤</div>
+            <div class="flex-grow-1">
+              <a [routerLink]="['/profile', user.id]" class="fw-bold text-decoration-none">
+                {{ user.fullName || user.username || user.email }}
+              </a>
+              <div class="text-muted small">{{ user.email }}</div>
+            </div>
+            <button *ngIf="user.id !== currentUserId && !isFollowed(user.id)"
+                    class="btn btn-sm btn-outline-primary"
+                    (click)="follow(user)">Follow</button>
+            <span *ngIf="isFollowed(user.id)" class="badge bg-success">Following</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CREATE POST -->
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+          <textarea class="form-control mb-2" rows="3"
+                    [(ngModel)]="newPostContent"
+                    placeholder="What's on your mind?"></textarea>
+          <input class="form-control mb-2"
+                 [(ngModel)]="newPostHashtags"
+                 placeholder="#hashtags (optional)">
+          <button class="btn btn-primary"
+                  (click)="createPost()"
+                  [disabled]="creatingPost || !newPostContent.trim()">
+            <span *ngIf="creatingPost" class="spinner-border spinner-border-sm me-1"></span>
+            {{ creatingPost ? 'Posting...' : '📢 Post' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- LOADING SKELETON -->
+      <div *ngIf="loading">
+        <div class="card mb-3 shadow-sm p-3" *ngFor="let s of [1,2,3]">
+          <div class="placeholder-glow">
+            <span class="placeholder col-4 mb-2 d-block"></span>
+            <span class="placeholder col-12 mb-1 d-block"></span>
+            <span class="placeholder col-8 d-block"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- POSTS -->
+      <div class="card mb-3 shadow-sm" *ngFor="let post of posts" [attr.id]="'post-' + post.id">
+        <div class="card-body">
+
+          <!-- AUTHOR ROW -->
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                   style="width:38px;height:38px;font-size:16px;">👤</div>
+              <div>
+                <a [routerLink]="['/profile', post.author?.id]"
+                   class="fw-bold text-decoration-none d-block">
+                  {{ getDisplayName(post.author) }}
+                </a>
+                <span class="text-muted small">{{ timeAgo(post.createdAt) }}</span>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 align-items-center">
+              <button *ngIf="post.author?.id !== currentUserId && !isFollowed(post.author?.id)"
+                      class="btn btn-sm btn-outline-primary"
+                      (click)="follow(post.author)">Follow</button>
+              <span *ngIf="isFollowed(post.author?.id)" class="badge bg-success">Following</span>
+              <button *ngIf="post.author?.id === currentUserId"
+                      class="btn btn-sm btn-outline-danger"
+                      (click)="deletePost(post)" title="Delete post">🗑️</button>
+            </div>
+          </div>
+
+          <!-- CONTENT -->
+          <p class="mt-1" style="white-space:pre-wrap;word-break:break-word;">
+            <span *ngFor="let word of formatContent(post.content)">
+              <a *ngIf="word.startsWith('#')"
+                 class="text-primary fw-bold" style="cursor:pointer;">{{ word }} </a>
+              <span *ngIf="!word.startsWith('#')">{{ word }} </span>
+            </span>
+          </p>
+
+          <!-- Image -->
+          <img *ngIf="post.imageUrl" [src]="post.imageUrl"
+               class="img-fluid rounded mb-2" style="max-height:300px;object-fit:cover;">
+
+          <!-- ACTIONS -->
+          <div class="d-flex gap-3 border-top pt-2">
+            <button class="btn btn-sm" (click)="toggleLike(post)">
+              {{ post.likedByCurrentUser ? '❤️' : '🤍' }} {{ post.likeCount }}
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" (click)="toggleComments(post)">
+              💬 {{ post.commentCount }}
+            </button>
+          </div>
+
+          <!-- COMMENTS -->
+          <div *ngIf="post.showComments" class="mt-3">
+
+            <div *ngFor="let comment of post.comments" class="mb-3">
+              <div class="d-flex gap-2">
+                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:30px;height:30px;font-size:12px;">👤</div>
+                <div class="flex-grow-1">
+                  <div class="bg-light rounded p-2 small">
+                    <strong>{{ comment.username }}</strong>: {{ comment.content }}
+                  </div>
+                  <div class="d-flex gap-3 mt-1">
+                    <button class="btn btn-link btn-sm p-0 text-muted" style="font-size:12px;"
+                            (click)="likeComment(comment)">
+                      👍 {{ comment.likeCount }}
+                    </button>
+                    <button class="btn btn-link btn-sm p-0 text-muted" style="font-size:12px;"
+                            (click)="comment.showReply = !comment.showReply">Reply</button>
+                    <button *ngIf="comment.userId === currentUserId"
+                            class="btn btn-link btn-sm p-0 text-danger" style="font-size:12px;"
+                            (click)="deleteComment(comment, post)">Delete</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Reply Input -->
+              <div *ngIf="comment.showReply" class="input-group mt-2 ms-4">
+                <input class="form-control form-control-sm"
+                       [(ngModel)]="comment.replyText" placeholder="Write a reply...">
+                <button class="btn btn-sm btn-primary" (click)="reply(post, comment)">Send</button>
+              </div>
+
+              <!-- Replies -->
+              <div class="ms-4 mt-1" *ngIf="comment.replies?.length">
+                <div *ngFor="let reply of comment.replies" class="small mb-1 bg-light rounded p-2">
+                  <strong>{{ reply.username }}</strong>: {{ reply.content }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Add Comment -->
+            <div class="input-group mt-2">
+              <input class="form-control form-control-sm"
+                     [(ngModel)]="post.newComment"
+                     placeholder="Write a comment..."
+                     (keyup.enter)="addComment(post)">
+              <button class="btn btn-sm btn-primary"
+                      [disabled]="!post.newComment?.trim()"
+                      (click)="addComment(post)">Send</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Load More Spinner -->
+      <div *ngIf="loadingMore" class="text-center py-3">
+        <div class="spinner-border text-primary spinner-border-sm"></div>
+      </div>
+
+      <!-- Empty Feed -->
+      <div *ngIf="!loading && posts.length === 0" class="text-center py-5 text-muted">
+        <div style="font-size:3rem;">📭</div>
+        <p class="mt-2">Your feed is empty. Follow people or connect to see posts!</p>
+        <a routerLink="/network" class="btn btn-outline-primary btn-sm">Find People</a>
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div class="col-md-3 d-none d-md-block">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3">🔥 Trending</h6>
+          <p class="text-muted small">Explore what's popular</p>
+          <button class="btn btn-outline-secondary btn-sm w-100" (click)="loadFeed()">
+            🔄 Refresh Feed
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
