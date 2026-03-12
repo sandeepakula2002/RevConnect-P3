@@ -1,27 +1,24 @@
-# ── Stage 1: Build ───────────────────────────────────────────────────
+# ── Stage 1: Build ─────────────────────────
 FROM maven:3.9.6-eclipse-temurin-17-alpine AS builder
-WORKDIR /app
+WORKDIR /build
 
-# Cache dependencies separately for faster rebuilds
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+# copy entire project (parent + modules)
+COPY . .
 
-COPY src ./src
-RUN mvn package -DskipTests -B
+# build only this module
+RUN mvn -pl api-gateway -am clean package -DskipTests
 
-# ── Stage 2: Runtime ─────────────────────────────────────────────────
+# ── Stage 2: Runtime ───────────────────────
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-# Add curl for healthchecks
 RUN apk add --no-cache curl
 
-# Create non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-COPY --from=builder /app/target/*.jar app.jar
+COPY --from=builder /build/api-gateway/target/*.jar app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java",   "-Djava.security.egd=file:/dev/./urandom",   "-XX:+UseContainerSupport",   "-XX:MaxRAMPercentage=75.0",   "-jar", "app.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]

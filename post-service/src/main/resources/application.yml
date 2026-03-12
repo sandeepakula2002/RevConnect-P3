@@ -6,7 +6,7 @@ spring:
     name: post-service
 
   datasource:
-    url: jdbc:h2:file:./data/postdb;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:file:./data/postdb
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -25,11 +25,10 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-server:8761/eureka/
 
   instance:
     prefer-ip-address: true
-    instance-id: ${spring.application.name}:${server.port}
 
 management:
   endpoints:

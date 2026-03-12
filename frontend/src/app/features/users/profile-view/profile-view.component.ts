@@ -74,7 +74,8 @@ export class ProfileViewComponent implements OnInit {
   loadProfile(): void {
     this.loading = true;
 
-    const profile$ = this.userService.getUserById(this.userId);
+    const profile$ = this.userService.getUserById(this.userId)
+  .pipe(catchError(() => of(null)));
     const following$ = this.isOwnProfile
       ? of(false)
       : this.networkService.isFollowing(this.userId).pipe(catchError(() => of(false)));
@@ -82,20 +83,29 @@ export class ProfileViewComponent implements OnInit {
     const followingCount$ = this.networkService.getFollowingCount(this.userId).pipe(catchError(() => of(0)));
 
     forkJoin([profile$, following$, followerCount$, followingCount$]).subscribe({
-      next: ([profile, isFollowing, followerCount, followingCount]) => {
-        this.profile = {
-          ...profile,
-          isFollowing,
-          followerCount: (profile.followerCount ?? followerCount) as number,
-          followingCount: (profile.followingCount ?? followingCount) as number,
-        };
-        this.loading = false;
-      },
-      error: () => {
-        this.errorMsg = 'Could not load profile.';
-        this.loading = false;
-      }
-    });
+       next: ([profile, isFollowing, followerCount, followingCount]) => {
+
+         if (!profile) {
+           this.errorMsg = 'User not found.';
+           this.loading = false;
+           return;
+         }
+
+         this.profile = {
+           ...profile,
+           isFollowing,
+           followerCount: profile.followerCount ?? followerCount,
+           followingCount: profile.followingCount ?? followingCount,
+         };
+
+         this.loading = false;
+       },
+       error: (err) => {
+         console.error('Profile load failed:', err);
+         this.errorMsg = 'Could not load profile.';
+         this.loading = false;
+       }
+     });
   }
 
   // ─── POSTS ───────────────────────────────────────────────────────────
