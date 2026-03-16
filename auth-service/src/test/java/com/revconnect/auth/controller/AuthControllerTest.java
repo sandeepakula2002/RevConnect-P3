@@ -26,21 +26,38 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("AuthController Web Layer Tests")
 class AuthControllerTest {
 
-    @Autowired MockMvc mockMvc;
-    @Autowired ObjectMapper objectMapper;
-    @MockBean AuthService authService;
-    @MockBean JwtService jwtService;
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    ObjectMapper objectMapper;
+
+    @MockBean
+    AuthService authService;
+
+    @MockBean
+    JwtService jwtService;
 
     @Test
     @DisplayName("POST /api/auth/register - valid request returns 201 with tokens")
     void register_validRequest_returns201() throws Exception {
+
         RegisterRequest req = RegisterRequest.builder()
-                .email("alice@example.com").password("password1")
-                .firstName("Alice").lastName("Smith").build();
+                .email("alice@example.com")
+                .username("alice")
+                .password("password1")
+                .firstName("Alice")
+                .lastName("Smith")
+                .accountType("PERSONAL")
+                .build();
 
         AuthResponse response = AuthResponse.builder()
-                .accessToken("access-token").refreshToken("refresh-token")
-                .tokenType("Bearer").userId(1L).email("alice@example.com").build();
+                .accessToken("access-token")
+                .refreshToken("refresh-token")
+                .tokenType("Bearer")
+                .userId(1L)
+                .email("alice@example.com")
+                .build();
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(response);
 
@@ -57,9 +74,15 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /api/auth/register - invalid email returns 400")
     void register_invalidEmail_returns400() throws Exception {
+
         RegisterRequest req = RegisterRequest.builder()
-                .email("not-an-email").password("password1")
-                .firstName("A").lastName("B").build();
+                .email("not-an-email")
+                .username("alice")
+                .password("password1")
+                .firstName("A")
+                .lastName("B")
+                .accountType("PERSONAL")
+                .build();
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -71,12 +94,19 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /api/auth/login - valid credentials return 200")
     void login_validCredentials_returns200() throws Exception {
+
         LoginRequest req = LoginRequest.builder()
-                .email("alice@example.com").password("password1").build();
+                .email("alice@example.com")
+                .password("password1")
+                .build();
 
         AuthResponse response = AuthResponse.builder()
-                .accessToken("access-token").refreshToken("refresh-token")
-                .tokenType("Bearer").userId(1L).email("alice@example.com").build();
+                .accessToken("access-token")
+                .refreshToken("refresh-token")
+                .tokenType("Bearer")
+                .userId(1L)
+                .email("alice@example.com")
+                .build();
 
         when(authService.login(any(LoginRequest.class))).thenReturn(response);
 
@@ -92,6 +122,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /api/auth/login - missing password returns 400")
     void login_missingPassword_returns400() throws Exception {
+
         String body = "{\"email\":\"alice@example.com\"}";
 
         mockMvc.perform(post("/api/auth/login")

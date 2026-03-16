@@ -14,6 +14,9 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(unique = true, nullable = false)
+    private String username;
+
     @Column(nullable = false)
     private String password;
 
@@ -23,21 +26,25 @@ public class User {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Column(name = "account_type", nullable = false)
+    private String accountType;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public User() {
-    }
+    public User() {}
 
     private User(Builder builder) {
         this.id = builder.id;
         this.email = builder.email;
+        this.username = builder.username;
         this.password = builder.password;
         this.firstName = builder.firstName;
         this.lastName = builder.lastName;
+        this.accountType = builder.accountType;
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
     }
@@ -57,68 +64,57 @@ public class User {
         return new Builder();
     }
 
-    public Long getId() {
-        return id;
-    }
+    // ───── Getters ─────
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getId() { return id; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getEmail() { return email; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public String getUsername() { return username; }
 
-    public String getPassword() {
-        return password;
-    }
+    public String getPassword() { return password; }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public String getFirstName() { return firstName; }
 
-    public String getFirstName() {
-        return firstName;
-    }
+    public String getLastName() { return lastName; }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
+    public String getAccountType() { return accountType; }
 
-    public String getLastName() {
-        return lastName;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    // ───── Setters ─────
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public void setId(Long id) { this.id = id; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public void setEmail(String email) { this.email = email; }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public void setUsername(String username) { this.username = username; }
+
+    public void setPassword(String password) { this.password = password; }
+
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+
+    public void setLastName(String lastName) { this.lastName = lastName; }
+
+    public void setAccountType(String accountType) { this.accountType = accountType; }
+
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    // ───── Builder ─────
 
     public static class Builder {
+
         private Long id;
         private String email;
+        private String username;
         private String password;
         private String firstName;
         private String lastName;
+        private String accountType;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -129,6 +125,11 @@ public class User {
 
         public Builder email(String email) {
             this.email = email;
+            return this;
+        }
+
+        public Builder username(String username) {
+            this.username = username;
             return this;
         }
 
@@ -147,13 +148,8 @@ public class User {
             return this;
         }
 
-        public Builder createdAt(LocalDateTime createdAt) {
-            this.createdAt = createdAt;
-            return this;
-        }
-
-        public Builder updatedAt(LocalDateTime updatedAt) {
-            this.updatedAt = updatedAt;
+        public Builder accountType(String accountType) {
+            this.accountType = accountType;
             return this;
         }
 

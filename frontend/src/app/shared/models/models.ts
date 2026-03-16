@@ -54,6 +54,9 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
+  username: string;
+  accountType: UserRole;   // ✅ ADDED
+
 }
 
 export interface LoginRequest {
@@ -93,7 +96,7 @@ export interface Post {
   updatedAt: string;
   comments?: Comment[];
   newComment?: string;
-   showComments?: boolean;
+  showComments?: boolean;
 }
 
 export interface CreatePostRequest {
@@ -107,7 +110,7 @@ export interface CreatePostRequest {
   originalPostId?: number;
 }
 
-// ─── Comment Models ──────────────────────────────────────────────────────
+// ─── Comment Models ─────────────────────────────────────────────────────
 
 export interface Comment {
   id: number;
@@ -122,11 +125,15 @@ export interface Comment {
   createdAt: string;
 }
 
-// ─── Notification Models ─────────────────────────────────────────────────
+// ─── Notification Models ────────────────────────────────────────────────
 
 export type NotificationType =
-  | 'CONNECTION_REQUEST' | 'CONNECTION_ACCEPTED' | 'NEW_FOLLOWER'
-  | 'POST_LIKED' | 'POST_COMMENTED' | 'POST_SHARED';
+  | 'CONNECTION_REQUEST'
+  | 'CONNECTION_ACCEPTED'
+  | 'NEW_FOLLOWER'
+  | 'POST_LIKED'
+  | 'POST_COMMENTED'
+  | 'POST_SHARED';
 
 export interface Notification {
   id: number;
@@ -140,7 +147,7 @@ export interface Notification {
   createdAt: string;
 }
 
-// ─── Connection Models ───────────────────────────────────────────────────
+// ─── Connection Models ──────────────────────────────────────────────────
 
 export type ConnectionStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
@@ -155,7 +162,7 @@ export interface Connection {
   status: string;
 }
 
-// ─── API Response Wrapper ────────────────────────────────────────────────
+// ─── API Response Wrapper ───────────────────────────────────────────────
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -175,7 +182,7 @@ export interface PageResponse<T> {
   last: boolean;
 }
 
-// ─── Feed Response (P3 post-service) ─────────────────────────────────────
+// ─── Feed Response (P3 post-service) ────────────────────────────────────
 
 export interface FeedResponse {
   posts: Post[];
@@ -184,7 +191,7 @@ export interface FeedResponse {
   currentPage: number;
 }
 
-// ─── Analytics ───────────────────────────────────────────────────────────
+// ─── Analytics ──────────────────────────────────────────────────────────
 
 export interface PostAnalytics {
   postId: number;
@@ -195,7 +202,7 @@ export interface PostAnalytics {
   engagementRate: number;
 }
 
-// ─── Follow ──────────────────────────────────────────────────────────────
+// ─── Follow ─────────────────────────────────────────────────────────────
 
 export interface Follow {
   id: number;

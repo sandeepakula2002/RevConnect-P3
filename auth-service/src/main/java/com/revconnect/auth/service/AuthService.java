@@ -32,6 +32,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+
         // Check if user already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
@@ -43,13 +44,25 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
+                .username(request.getUsername())       // NEW
+                .accountType(request.getAccountType()) // NEW
                 .build();
 
         User savedUser = userRepository.save(user);
-        syncUserProfile(savedUser.getId(), savedUser.getEmail(), savedUser.getFirstName(), savedUser.getLastName());
 
-        // Generate tokens
+        // Sync user profile with user-service
+        syncUserProfile(
+                savedUser.getId(),
+                savedUser.getEmail(),
+                savedUser.getUsername(),   // NEW
+                savedUser.getFirstName(),
+                savedUser.getLastName()
+        );
+
+        // Generate JWT access token
         String accessToken = jwtService.generateToken(savedUser.getId(), savedUser.getEmail());
+
+        // Generate refresh token
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser.getId());
 
         return AuthResponse.builder()
@@ -63,16 +76,24 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        // Find user by email
+
+        // Find user
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-        // Verify password
+        // Validate password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid email or password");
         }
 
-        syncUserProfile(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName());
+        // Sync profile with user-service
+        syncUserProfile(
+                user.getId(),
+                user.getEmail(),
+                user.getUsername(),
+                user.getFirstName(),
+                user.getLastName()
+        );
 
         // Generate tokens
         String accessToken = jwtService.generateToken(user.getId(), user.getEmail());
@@ -89,12 +110,14 @@ public class AuthService {
 
     @Transactional
     public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+
         String requestRefreshToken = request.getRefreshToken();
 
         return refreshTokenService.findByToken(requestRefreshToken)
                 .map(refreshTokenService::verifyExpiration)
                 .map(RefreshToken::getUserId)
                 .map(userId -> {
+
                     User user = userRepository.findById(userId)
                             .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -109,11 +132,12 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
     }
 
-    private void syncUserProfile(Long id, String email, String firstName, String lastName) {
+    private void syncUserProfile(Long id, String email, String username, String firstName, String lastName) {
+
         try {
             restTemplate.postForEntity(
                     "http://user-service/api/users/sync",
-                    new SyncUserRequest(id, email, firstName, lastName),
+                    new SyncUserRequest(id, email, username, firstName, lastName),
                     Void.class
             );
         } catch (Exception e) {

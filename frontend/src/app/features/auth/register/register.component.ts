@@ -19,26 +19,40 @@ export class RegisterComponent {
     private authService: AuthService,
     private router: Router
   ) {
+
     this.registerForm = this.fb.group({
-      email:     ['', [Validators.required, Validators.email]],
-      password:  ['', [Validators.required, Validators.minLength(8)]],
       firstName: ['', Validators.required],
-      lastName:  ['', Validators.required]
+      lastName: ['', Validators.required],
+      username: ['', Validators.required],   // NEW
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      accountType: ['', Validators.required]
     });
+
   }
 
   get f() { return this.registerForm.controls; }
 
   onSubmit() {
+
     if (this.registerForm.invalid) return;
 
     this.loading = true;
     this.error = '';
     this.success = '';
 
-    const { email, password, firstName, lastName } = this.registerForm.getRawValue();
+    const { email, password, firstName, lastName, username, accountType } =
+      this.registerForm.getRawValue();
 
-    this.authService.register({ email, password, firstName, lastName }).subscribe({
+    this.authService.register({
+      email,
+      password,
+      firstName,
+      lastName,
+      username,
+      accountType
+    }).subscribe({
+
       next: () => {
         this.loading = false;
         this.success = 'Registration successful! Please login to continue.';
@@ -47,10 +61,12 @@ export class RegisterComponent {
           this.router.navigate(['/login']);
         }, 2000);
       },
+
       error: (err) => {
         this.error = err.error?.message || 'Registration failed. Please try again.';
         this.loading = false;
       }
+
     });
   }
 }
