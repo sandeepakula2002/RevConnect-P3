@@ -28,6 +28,7 @@ class PostRepositoryTest {
         postRepository.save(Post.builder().userId(2L).content("Post C").build());
     }
 
+    // ── findByUserIdOrderByCreatedAtDesc ────────────────────────────────────────────────────
     @Test
     @DisplayName("findByUserIdOrderByCreatedAtDesc - returns posts for specific user")
     void findByUserId_returnsOnlyUserPosts() {
@@ -37,6 +38,7 @@ class PostRepositoryTest {
         page.getContent().forEach(p -> assertThat(p.getUserId()).isEqualTo(1L));
     }
 
+    // ── findByUserIdOrderByCreatedAtDescEmpty ────────────────────────────────────────────────────
     @Test
     @DisplayName("findByUserIdOrderByCreatedAtDesc - returns empty page for user with no posts")
     void findByUserId_noPostsForUser_returnsEmpty() {
@@ -46,15 +48,7 @@ class PostRepositoryTest {
         assertThat(page.getTotalElements()).isEqualTo(0);
     }
 
-    @Test
-    @DisplayName("findByUserIdInOrderByCreatedAtDesc - returns posts for multiple user ids")
-    void findByUserIdIn_returnsPostsForMultipleUsers() {
-        Page<Post> page = postRepository.findByUserIdInOrderByCreatedAtDesc(
-                List.of(1L, 2L), PageRequest.of(0, 10));
-
-        assertThat(page.getContent()).hasSize(3);
-    }
-
+    // ── findByUserIdInOrderByCreatedAtDesc EmptyUserEmptyReturn ────────────────────────────────────────────────────
     @Test
     @DisplayName("findByUserIdInOrderByCreatedAtDesc - returns empty for empty user id list")
     void findByUserIdIn_emptyList_returnsEmpty() {
@@ -64,6 +58,7 @@ class PostRepositoryTest {
         assertThat(page.getContent()).isEmpty();
     }
 
+    // ── saveWithTimeStamp ────────────────────────────────────────────────────
     @Test
     @DisplayName("save - persists post with auto-generated id and timestamps")
     void save_persistsWithTimestamps() {

@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 @WebMvcTest(PostController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -32,6 +33,7 @@ class PostControllerTest {
     @Autowired ObjectMapper objectMapper;
     @MockBean PostService postService;
 
+    // ─ createPost ────────────────────────────────────────────────────
     @Test
     @DisplayName("POST /api/posts - creates post returns 201 with post body")
     void createPost_returns201() throws Exception {
@@ -66,6 +68,7 @@ class PostControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ── getPost ────────────────────────────────────────────────────
     @Test
     @DisplayName("GET /api/posts/{id} - returns 200 with post")
     void getPost_returns200() throws Exception {
@@ -82,6 +85,7 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.likeCount").value(2));
     }
 
+    // ── getUserPosts ────────────────────────────────────────────────────
     @Test
     @DisplayName("GET /api/posts/user/{userId} - returns paginated feed")
     void getUserPosts_returnsFeed() throws Exception {
@@ -97,6 +101,7 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(1));
     }
 
+    // ── deletePost ────────────────────────────────────────────────────
     @Test
     @DisplayName("DELETE /api/posts/{id} - returns 204")
     void deletePost_returns204() throws Exception {
@@ -104,5 +109,45 @@ class PostControllerTest {
                         .header("X-User-Id", "10")
                         .with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+
+    // ── updatePost ────────────────────────────────────────────────────
+    @Test
+    @DisplayName("PUT /api/posts/{id} - returns 200 with updated post")
+    void updatePost_returns200() throws Exception {
+        UpdatePostRequest req = UpdatePostRequest.builder().content("Updated").build();
+        PostResponse response = PostResponse.builder()
+                .id(1L).userId(10L).content("Updated")
+                .likeCount(2L).commentCount(1L)
+                .createdAt(LocalDateTime.now()).build();
+
+        when(postService.updatePost(eq(1L), eq(10L), any(UpdatePostRequest.class))).thenReturn(response);
+
+        mockMvc.perform(put("/api/posts/1")
+                        .header("X-User-Id", "10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req))
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value("Updated"));
+    }
+
+    // ── getFeed ────────────────────────────────────────────────────
+    @Test
+    @DisplayName("GET /api/posts/feed - returns paginated feed")
+    void getFeed_returnsPaginatedFeed() throws Exception {
+        PostResponse p = PostResponse.builder().id(1L).userId(5L).content("Post").build();
+        FeedResponse feed = FeedResponse.builder()
+                .posts(List.of(p)).currentPage(0).totalPages(1).totalElements(1).pageSize(20).build();
+
+        when(postService.getFeed(eq(10L), eq(0), eq(20))).thenReturn(feed);
+
+        mockMvc.perform(get("/api/posts/feed")
+                .header("X-User-Id", "10"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts").isArray())
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 }
